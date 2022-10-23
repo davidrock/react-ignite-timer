@@ -8,11 +8,71 @@ import {
   StartCountdownButton,
   TaskInput,
 } from './styles'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as zod from 'zod'
+import { useForm } from 'react-hook-form'
+import { useState } from 'react'
+
+const newCycleFormValidationSchema = zod.object({
+  task: zod.string().min(1, 'Provide a task'),
+  minutesAmount: zod
+    .number()
+    .step(5)
+    .min(5, 'The interval can not be less than 5 minutes')
+    .max(60, 'The interval must be between 5 and 60 minutes'),
+})
+
+type NewCycleFormData = zod.infer<typeof newCycleFormValidationSchema>
+
+interface Cycle {
+  id: string
+  task: string
+  minutesAmount: number
+}
 
 export default function Home() {
+  const [cycles, setCycles] = useState<Cycle[]>([])
+  const [activeCycleId, setActiveCycleId] = useState<string | null>(null)
+  const [amountSecondsPassed, setAmountSecondsPassed] = useState(0)
+
+  const { register, handleSubmit, watch, formState, reset } =
+    useForm<NewCycleFormData>({
+      resolver: zodResolver(newCycleFormValidationSchema),
+      defaultValues: {
+        task: '',
+        minutesAmount: 5,
+      },
+    })
+
+  function handleCreateNewCycle(data: Cycle) {
+    const id = new Date().getTime().toString()
+    const newCycle: Cycle = {
+      id,
+      task: data.task,
+      minutesAmount: data.minutesAmount,
+    }
+    setCycles((state) => [...state, newCycle])
+    setActiveCycleId(id)
+    reset()
+  }
+
+  const activeCycle = cycles.find((c) => c.id === activeCycleId)
+
+  const totalSeconds = activeCycle ? activeCycle.minutesAmount * 60 : 0
+  const currentSeconds = activeCycle ? totalSeconds - amountSecondsPassed : 0
+
+  const minutesAmount = Math.floor(currentSeconds / 60)
+  const secondsAmount = currentSeconds % 60
+
+  const minutes = String(minutesAmount).padStart(2, '0')
+  const seconds = String(secondsAmount).padStart(2, '0')
+
+  const task = watch('task')
+  const isSubmitDisabled = !task
+
   return (
     <HomeContainer>
-      <form action="">
+      <form onSubmit={handleSubmit(handleCreateNewCycle)} action="">
         <FormContainer>
           <label htmlFor="task">I am going to work at</label>
           <TaskInput
@@ -20,6 +80,7 @@ export default function Home() {
             placeholder="Give a name to your task"
             autoComplete="none"
             list="task-sugestions"
+            {...register('task')}
           />
 
           <datalist id="task-sugestions">
@@ -32,25 +93,23 @@ export default function Home() {
           <label htmlFor="minutesAmount">for</label>
           <MinutesAmountInput
             id="minutesAmount"
-            type="number"
             placeholder="00"
-            min={5}
-            max={60}
-            step={5}
+            type="number"
+            {...register('minutesAmount', { valueAsNumber: true })}
           />
 
           <span>minutes.</span>
         </FormContainer>
 
         <CountdownContainer>
-          <span>0</span>
-          <span>0</span>
+          <span>{minutes[0]}</span>
+          <span>{minutes[1]}</span>
           <Separator>:</Separator>
-          <span>0</span>
-          <span>0</span>
+          <span>{seconds[0]}</span>
+          <span>{seconds[1]}</span>
         </CountdownContainer>
 
-        <StartCountdownButton type="submit">
+        <StartCountdownButton type="submit" disabled={isSubmitDisabled}>
           <Play size={24} />
           Start
         </StartCountdownButton>
