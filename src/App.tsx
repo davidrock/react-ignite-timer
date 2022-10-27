@@ -6,13 +6,12 @@ import { BrowserRouter } from 'react-router-dom'
 
 function App() {
   return (
-    <BrowserRouter>
-      <ThemeProvider theme={defaultTheme}>
+    <ThemeProvider theme={defaultTheme}>
+      <BrowserRouter>
         <Router />
-
-        <GlobalStyle />
-      </ThemeProvider>
-    </BrowserRouter>
+      </BrowserRouter>
+      <GlobalStyle />
+    </ThemeProvider>
   )
 }
 
