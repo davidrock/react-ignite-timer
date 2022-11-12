@@ -19,7 +19,7 @@ export default function History() {
             </tr>
           </thead>
           <tbody>
-            {cycles.map((c) => {
+            {cycles?.map((c) => {
               return (
                 <tr key={c.id}>
                   <td>{c.task}</td>
